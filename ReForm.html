@@ -207,6 +207,7 @@ textarea{resize:vertical;min-height:44px;}
 .pill.gold{background:var(--gold-dim);color:var(--gold-ink);}
 .pill.done{background:rgba(111,207,151,.15);color:var(--success-ink);}
 .empty{color:var(--text-dim-2);font-size:13px;padding:22px 0;text-align:center;border:1px dashed var(--border);border-radius:8px;}
+.search-input{margin-bottom:12px;}
 
 .tabs-sub{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:0;}
 .tab-sub-btn{
@@ -432,6 +433,7 @@ canvas{max-height:280px;}
       <button class="nav-btn" data-page="pesees"><span class="ic">⚖</span>Pesées</button>
       <button class="nav-btn" data-page="entrainement"><span class="ic">✦</span>Entraînement</button>
       <button class="nav-btn" data-page="diete"><span class="ic">◐</span>Diète</button>
+      <button class="nav-btn" data-page="sommeil"><span class="ic">☾</span>Sommeil</button>
       <button class="nav-btn" data-page="planning"><span class="ic">▤</span>Planning</button>
       <button class="nav-btn" data-page="objectifs"><span class="ic">◎</span>Objectifs</button>
     </nav>
@@ -505,7 +507,7 @@ canvas{max-height:280px;}
       <div class="tabs-sub">
         <button class="tab-sub-btn active" data-sub="weighins" onclick="switchSub('pesees','weighins')">Pesées</button>
         <button class="tab-sub-btn" data-sub="photos" onclick="switchSub('pesees','photos')">Photos</button>
-        <button class="tab-sub-btn" data-sub="sleep" onclick="switchSub('pesees','sleep')">Sommeil</button>
+        <button class="tab-sub-btn" data-sub="measurements" onclick="switchSub('pesees','measurements')">Mesures</button>
       </div>
 
       <!-- pesées -->
@@ -524,6 +526,7 @@ canvas{max-height:280px;}
         </div>
 
         <div class="section-title"><span class="bar"></span>Historique</div>
+        <input type="text" id="weighSearch" class="search-input" placeholder="🔍 Rechercher dans les notes..." oninput="renderPesees()">
         <div class="list" id="weighList"></div>
       </div>
 
@@ -547,37 +550,70 @@ canvas{max-height:280px;}
         <div class="photo-compare" id="photoCompareView"></div>
 
         <div class="section-title"><span class="bar"></span>Galerie</div>
+        <input type="text" id="photoSearch" class="search-input" placeholder="🔍 Rechercher dans les notes..." oninput="renderProgressPhotos()">
         <div class="photo-grid" id="photoGrid"></div>
       </div>
 
-      <!-- sommeil -->
-      <div id="sub-pesees-sleep" class="hidden">
+      <!-- mesures (optionnel) -->
+      <div id="sub-pesees-measurements" class="hidden">
         <div class="card" style="margin-bottom:18px;">
-          <div class="section-title"><span class="bar"></span><span id="sleepFormTitle">Ajouter une nuit</span></div>
+          <div class="section-title"><span class="bar"></span><span id="measureFormTitle">Ajouter des mesures</span></div>
+          <div class="page-sub" style="margin:-6px 0 14px;">Optionnel — complète le suivi du poids, remplis uniquement ce que tu veux suivre.</div>
           <div class="form-row">
-            <div class="field"><label>Date</label><input type="date" id="sleepDate"></div>
-            <div class="field"><label>Heures dormies</label><input type="number" step="0.25" id="sleepHours" placeholder="ex: 7.5"></div>
-            <div class="field"><label>Qualité</label>
-              <select id="sleepQuality">
-                <option value="Mauvaise">Mauvaise</option>
-                <option value="Moyenne" selected>Moyenne</option>
-                <option value="Bonne">Bonne</option>
-                <option value="Excellente">Excellente</option>
-              </select>
-            </div>
-            <div class="field" style="flex:2;"><label>Note (optionnel)</label><input type="text" id="sleepNote" placeholder="réveils nocturnes, sieste..."></div>
+            <div class="field"><label>Date</label><input type="date" id="measureDate"></div>
+            <div class="field"><label>Taille (cm)</label><input type="number" step="0.5" id="measureWaist" placeholder="ex: 85"></div>
+            <div class="field"><label>Poitrine (cm)</label><input type="number" step="0.5" id="measureChest" placeholder="ex: 100"></div>
+            <div class="field"><label>Bras (cm)</label><input type="number" step="0.5" id="measureArms" placeholder="ex: 34"></div>
           </div>
           <div class="form-row">
-            <button class="btn" id="sleepSubmitBtn" onclick="submitSleep()">Ajouter</button>
-            <button class="btn ghost hidden" id="sleepCancelBtn" onclick="cancelSleepEdit()">Annuler la modification</button>
+            <div class="field"><label>Cuisses (cm)</label><input type="number" step="0.5" id="measureThighs" placeholder="ex: 55"></div>
+            <div class="field"><label>Hanches (cm)</label><input type="number" step="0.5" id="measureHips" placeholder="ex: 95"></div>
+            <div class="field" style="flex:2;"><label>Note (optionnel)</label><input type="text" id="measureNote" placeholder="ex: le matin, à jeun..."></div>
+          </div>
+          <div class="form-row">
+            <button class="btn secondary small" id="measureSubmitBtn" onclick="submitMeasurement()">Ajouter</button>
+            <button class="btn ghost small hidden" id="measureCancelBtn" onclick="cancelMeasurementEdit()">Annuler la modification</button>
           </div>
         </div>
 
-        <div class="grid cols-4" id="sleepStats" style="margin-bottom:20px;"></div>
-
         <div class="section-title"><span class="bar"></span>Historique</div>
-        <div class="list" id="sleepList"></div>
+        <div class="list" id="measurementList"></div>
       </div>
+
+    </div>
+
+    <!-- ================= SOMMEIL ================= -->
+    <div class="page" id="page-sommeil">
+      <div class="page-header">
+        <div><h1 class="page-title">Sommeil</h1><div class="page-sub">Suivi de tes nuits</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="section-title"><span class="bar"></span><span id="sleepFormTitle">Ajouter une nuit</span></div>
+        <div class="form-row">
+          <div class="field"><label>Date</label><input type="date" id="sleepDate"></div>
+          <div class="field"><label>Heures dormies</label><input type="number" step="0.25" id="sleepHours" placeholder="ex: 7.5"></div>
+          <div class="field"><label>Qualité</label>
+            <select id="sleepQuality">
+              <option value="Mauvaise">Mauvaise</option>
+              <option value="Moyenne" selected>Moyenne</option>
+              <option value="Bonne">Bonne</option>
+              <option value="Excellente">Excellente</option>
+            </select>
+          </div>
+          <div class="field" style="flex:2;"><label>Note (optionnel)</label><input type="text" id="sleepNote" placeholder="réveils nocturnes, sieste..."></div>
+        </div>
+        <div class="form-row">
+          <button class="btn" id="sleepSubmitBtn" onclick="submitSleep()">Ajouter</button>
+          <button class="btn ghost hidden" id="sleepCancelBtn" onclick="cancelSleepEdit()">Annuler la modification</button>
+        </div>
+      </div>
+
+      <div class="grid cols-4" id="sleepStats" style="margin-bottom:20px;"></div>
+
+      <div class="section-title"><span class="bar"></span>Historique</div>
+      <input type="text" id="sleepSearch" class="search-input" placeholder="🔍 Rechercher dans les notes..." oninput="renderSleep()">
+      <div class="list" id="sleepList"></div>
     </div>
 
     <!-- ================= ENTRAINEMENT ================= -->
@@ -591,6 +627,7 @@ canvas{max-height:280px;}
       <div class="tabs-sub">
         <button class="tab-sub-btn active" data-sub="programmes" onclick="switchSub('entrainement','programmes')">Mes programmes</button>
         <button class="tab-sub-btn" data-sub="journal" onclick="switchSub('entrainement','journal')">Journal des séances</button>
+        <button class="tab-sub-btn" data-sub="progression" onclick="switchSub('entrainement','progression')">Progression</button>
         <button class="tab-sub-btn" data-sub="guide" onclick="switchSub('entrainement','guide')">Guide des exercices</button>
       </div>
 
@@ -611,6 +648,10 @@ canvas{max-height:280px;}
 
         <div class="section-title"><span class="bar"></span>Programmes enregistrés</div>
         <div class="list" id="programList"></div>
+
+        <div class="section-title" style="margin-top:24px;"><span class="bar"></span>Modèles prêts à l'emploi</div>
+        <div class="page-sub" style="margin:-8px 0 14px;">Ajoute directement un programme type à ta liste, puis modifie-le si besoin.</div>
+        <div class="list" id="programTemplateList"></div>
       </div>
 
       <!-- journal -->
@@ -678,7 +719,24 @@ canvas{max-height:280px;}
         </div>
 
         <div class="section-title"><span class="bar"></span>Historique des séances</div>
+        <input type="text" id="sessionSearch" class="search-input" placeholder="🔍 Rechercher par programme ou exercice..." oninput="renderSessions()">
         <div class="list" id="sessionList"></div>
+      </div>
+
+      <!-- progression -->
+      <div id="sub-entrainement-progression" class="hidden">
+        <div class="card" style="margin-bottom:18px;">
+          <div class="section-title"><span class="bar"></span>📈 Progression de force</div>
+          <div class="page-sub" style="margin:-6px 0 14px;">La charge maximale soulevée par séance, exercice par exercice.</div>
+          <div class="form-row" style="max-width:320px;">
+            <div class="field"><label>Exercice</label>
+              <select id="progressionExerciseSelect" onchange="renderProgressionChart()"></select>
+            </div>
+          </div>
+          <div class="empty hidden" id="progressionEmpty">Enregistre au moins une séance avec des charges pour voir ta progression ici.</div>
+          <canvas id="progressionChart" height="90"></canvas>
+          <div class="grid cols-4" id="progressionPRCard" style="margin-top:14px;"></div>
+        </div>
       </div>
 
       <!-- guide des exercices -->
@@ -816,6 +874,7 @@ canvas{max-height:280px;}
       </div>
 
       <div class="section-title"><span class="bar"></span>Journal complet</div>
+      <input type="text" id="mealSearch" class="search-input" placeholder="🔍 Rechercher un repas..." oninput="renderDiete()">
       <div class="list" id="mealListAll"></div>
     </div>
 
@@ -999,6 +1058,73 @@ function defaultPrograms(){
   ];
 }
 
+function tplEx(name, sets, reps, rest){ return {name, sets, reps, weight:'', rest}; }
+
+const PROGRAM_TEMPLATES = [
+  { name:'Full Body Débutant', exercises:[
+      tplEx('Squat', 3, '10-12', 90),
+      tplEx('Développé couché barre', 3, '10-12', 90),
+      tplEx('Rowing barre', 3, '10-12', 90),
+      tplEx('Développé militaire barre ou haltères', 3, '10-12', 75),
+      tplEx('Mollets debout', 3, '15', 45)
+  ]},
+  { name:'Push (Pecs / Épaules / Triceps)', exercises:[
+      tplEx('Développé couché barre', 4, '8-10', 90),
+      tplEx('Développé militaire barre ou haltères', 3, '8-10', 90),
+      tplEx('Écarté couché haltères', 3, '10-12', 60),
+      tplEx('Élévations latérales', 3, '12-15', 45),
+      tplEx('Extension triceps poulie', 3, '12-15', 45)
+  ]},
+  { name:'Pull (Dos / Biceps)', exercises:[
+      tplEx('Soulevé de terre', 3, '6-8', 120),
+      tplEx('Tractions (ou tirage vertical)', 3, '8-10', 90),
+      tplEx('Rowing barre', 3, '8-10', 90),
+      tplEx('Curl haltères alterné', 3, '10-12', 60),
+      tplEx('Face pull', 3, '12-15', 45)
+  ]},
+  { name:'Legs (Jambes complet)', exercises:[
+      tplEx('Squat', 4, '8-10', 120),
+      tplEx('Soulevé de terre jambes tendues', 3, '10-12', 90),
+      tplEx('Presse à cuisses', 3, '10-12', 90),
+      tplEx('Leg curl (ischios)', 3, '12-15', 60),
+      tplEx('Mollets debout', 4, '15', 45)
+  ]},
+  { name:'Abdos & Gainage', exercises:[
+      tplEx('Crunch', 3, '15-20', 45),
+      tplEx('Planche (gainage)', 3, '30-45s', 45),
+      tplEx('Relevé de jambes', 3, '12-15', 45),
+      tplEx('Gainage latéral (par côté)', 3, '20-30s', 45)
+  ]}
+];
+
+function addProgramTemplate(idx){
+  const tpl = PROGRAM_TEMPLATES[idx];
+  if(!tpl) return;
+  state.programs.push({
+    id: uid(),
+    name: tpl.name,
+    exercises: tpl.exercises.map(ex=> Object.assign({id:uid()}, ex))
+  });
+  save(); renderAll();
+  toast(`Programme "${tpl.name}" ajouté`);
+}
+
+function renderProgramTemplates(){
+  const wrap = document.getElementById('programTemplateList');
+  if(!wrap) return;
+  wrap.innerHTML = PROGRAM_TEMPLATES.map((tpl,idx)=>`
+    <div class="row-item" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+        <div class="ri-title">${tpl.name} <span class="pill teal">${tpl.exercises.length} exercices</span></div>
+        <button class="btn ghost small" onclick="addProgramTemplate(${idx})">+ Ajouter à mes programmes</button>
+      </div>
+      <div class="ex-pill-row">
+        ${tpl.exercises.map(ex=>`<span class="ex-pill">${ex.name}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
 function defaultState(){
   return {
     profile:{height:null,startWeight:null,age:null,sex:'H',activity:'1.55',goal:'loss_moderate',firstName:'',lastName:'',dateFormat:'long',weightUnit:'kg',accentColor:'orange'},
@@ -1012,7 +1138,8 @@ function defaultState(){
     rewardsClaimed:[],    // {id,kind:'milestone'|'goal',key,label,date}
     lastExportDate:null,
     progressPhotos:[],    // {id,date,note,dataUrl}
-    sleepLog:[]           // {id,date,hours,quality,note}
+    sleepLog:[],          // {id,date,hours,quality,note}
+    measurements:[]       // {id,date,waist,chest,arms,thighs,hips,note}
   };
 }
 
@@ -1344,11 +1471,12 @@ function deleteWeighIn(id){
 
 function renderPesees(){
   if(!document.getElementById('weighDate').value) document.getElementById('weighDate').value = todayStr();
+  const search = (document.getElementById('weighSearch')?.value || '').toLowerCase().trim();
 
   const sorted = [...state.weighIns].sort((a,b)=> b.date.localeCompare(a.date));
   const list = document.getElementById('weighList');
   if(sorted.length===0){ list.innerHTML = '<div class="empty">Aucune pesée pour le moment.</div>'; return; }
-  list.innerHTML = sorted.map((w,i)=>{
+  const rows = sorted.map((w,i)=>{
     const prev = sorted[i+1];
     let delta = '';
     if(prev){
@@ -1356,7 +1484,7 @@ function renderPesees(){
       const dParts = weightParts(Math.abs(d));
       delta = `<span style="color:${d<=0?'var(--success-ink)':'var(--accent-ink)'}">${d>0?'+':d<0?'-':''}${dParts.num} ${dParts.unit}</span>`;
     }
-    return `<div class="row-item">
+    return {w, html:`<div class="row-item">
       <div class="ri-main">
         <div class="ri-title">${fmtWeight(w.weight)} <span style="font-weight:400;color:var(--text-dim);font-size:12.5px;">— ${fmtDate(w.date)}</span></div>
         <div class="ri-sub">${w.note?w.note+' · ':''}${delta}</div>
@@ -1365,8 +1493,10 @@ function renderPesees(){
         <button class="btn ghost small" onclick="editWeighIn('${w.id}')">Modifier</button>
         <button class="btn danger-ghost small" onclick="deleteWeighIn('${w.id}')">Suppr.</button>
       </div>
-    </div>`;
-  }).join('');
+    </div>`};
+  });
+  const filtered = search ? rows.filter(r=> (r.w.note||'').toLowerCase().includes(search)) : rows;
+  list.innerHTML = filtered.length ? filtered.map(r=>r.html).join('') : '<div class="empty">Aucun résultat pour cette recherche.</div>';
 }
 
 /* ============================================================
@@ -1447,7 +1577,10 @@ function renderProgressPhotos(){
 
   const grid = document.getElementById('photoGrid');
   if(sorted.length===0){ grid.innerHTML = '<div class="empty">Aucune photo pour le moment.</div>'; return; }
-  grid.innerHTML = sorted.map(p=>`
+  const search = (document.getElementById('photoSearch')?.value || '').toLowerCase().trim();
+  const filtered = search ? sorted.filter(p=>(p.note||'').toLowerCase().includes(search)) : sorted;
+  if(filtered.length===0){ grid.innerHTML = '<div class="empty">Aucun résultat pour cette recherche.</div>'; return; }
+  grid.innerHTML = filtered.map(p=>`
     <div class="photo-card ${selectedPhotoIds.includes(p.id)?'selected':''}" onclick="togglePhotoSelect('${p.id}')">
       <button class="photo-card-del" onclick="event.stopPropagation();deleteProgressPhoto('${p.id}')">✕</button>
       <img src="${p.dataUrl}" alt="">
@@ -1534,7 +1667,10 @@ function renderSleep(){
 
   const list = document.getElementById('sleepList');
   if(sorted.length===0){ list.innerHTML = '<div class="empty">Aucune nuit enregistrée.</div>'; return; }
-  list.innerHTML = sorted.map(s=>`
+  const search = (document.getElementById('sleepSearch')?.value || '').toLowerCase().trim();
+  const filteredSleep = search ? sorted.filter(s=>(s.note||'').toLowerCase().includes(search) || (s.quality||'').toLowerCase().includes(search)) : sorted;
+  if(filteredSleep.length===0){ list.innerHTML = '<div class="empty">Aucun résultat pour cette recherche.</div>'; return; }
+  list.innerHTML = filteredSleep.map(s=>`
     <div class="row-item">
       <div class="ri-main">
         <div class="ri-title">${s.hours} h <span class="pill teal">${s.quality}</span> <span style="font-weight:400;color:var(--text-dim);font-size:12.5px;">— ${fmtDate(s.date)}</span></div>
@@ -1546,6 +1682,87 @@ function renderSleep(){
       </div>
     </div>
   `).join('');
+}
+
+/* ============================================================
+   MESURES CORPORELLES (optionnel)
+   ============================================================ */
+let editingMeasurementId = null;
+const MEASURE_FIELDS = ['waist','chest','arms','thighs','hips'];
+const MEASURE_LABELS = {waist:'Taille', chest:'Poitrine', arms:'Bras', thighs:'Cuisses', hips:'Hanches'};
+
+function submitMeasurement(){
+  const date = document.getElementById('measureDate').value || todayStr();
+  const entry = {date, note: document.getElementById('measureNote').value.trim()};
+  let hasValue = false;
+  MEASURE_FIELDS.forEach(f=>{
+    const v = parseFloat(document.getElementById('measure'+f.charAt(0).toUpperCase()+f.slice(1)).value);
+    entry[f] = isNaN(v) ? null : v;
+    if(!isNaN(v)) hasValue = true;
+  });
+  if(!hasValue){ alert('Renseigne au moins une mesure.'); return; }
+
+  if(editingMeasurementId){
+    const m = state.measurements.find(m=>m.id===editingMeasurementId);
+    Object.assign(m, entry);
+    editingMeasurementId = null;
+    document.getElementById('measureSubmitBtn').textContent = 'Ajouter';
+    document.getElementById('measureFormTitle').textContent = 'Ajouter des mesures';
+    document.getElementById('measureCancelBtn').classList.add('hidden');
+  } else {
+    state.measurements.push(Object.assign({id:uid()}, entry));
+  }
+  MEASURE_FIELDS.forEach(f=> document.getElementById('measure'+f.charAt(0).toUpperCase()+f.slice(1)).value = '');
+  document.getElementById('measureNote').value = '';
+  save(); renderMeasurements();
+  toast('Mesures enregistrées');
+}
+
+function editMeasurement(id){
+  const m = state.measurements.find(m=>m.id===id);
+  if(!m) return;
+  document.getElementById('measureDate').value = m.date;
+  MEASURE_FIELDS.forEach(f=> document.getElementById('measure'+f.charAt(0).toUpperCase()+f.slice(1)).value = m[f]!=null ? m[f] : '');
+  document.getElementById('measureNote').value = m.note||'';
+  editingMeasurementId = id;
+  document.getElementById('measureSubmitBtn').textContent = 'Mettre à jour';
+  document.getElementById('measureFormTitle').textContent = 'Modifier les mesures';
+  document.getElementById('measureCancelBtn').classList.remove('hidden');
+  document.getElementById('measureDate').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function cancelMeasurementEdit(){
+  editingMeasurementId = null;
+  MEASURE_FIELDS.forEach(f=> document.getElementById('measure'+f.charAt(0).toUpperCase()+f.slice(1)).value = '');
+  document.getElementById('measureNote').value = '';
+  document.getElementById('measureSubmitBtn').textContent = 'Ajouter';
+  document.getElementById('measureFormTitle').textContent = 'Ajouter des mesures';
+  document.getElementById('measureCancelBtn').classList.add('hidden');
+}
+function deleteMeasurement(id){
+  if(!confirm('Supprimer ces mesures ?')) return;
+  state.measurements = state.measurements.filter(m=>m.id!==id);
+  save(); renderMeasurements();
+}
+
+function renderMeasurements(){
+  if(!document.getElementById('measureDate').value) document.getElementById('measureDate').value = todayStr();
+  const list = document.getElementById('measurementList');
+  if(!list) return;
+  const sorted = [...state.measurements].sort((a,b)=> b.date.localeCompare(a.date));
+  if(sorted.length===0){ list.innerHTML = '<div class="empty">Aucune mesure enregistrée.</div>'; return; }
+  list.innerHTML = sorted.map(m=>{
+    const parts = MEASURE_FIELDS.filter(f=>m[f]!=null).map(f=>`${MEASURE_LABELS[f]} ${m[f]}cm`).join(' · ');
+    return `<div class="row-item">
+      <div class="ri-main">
+        <div class="ri-title">${fmtDate(m.date)}</div>
+        <div class="ri-sub">${parts||'—'}${m.note?' · '+m.note:''}</div>
+      </div>
+      <div class="ri-actions">
+        <button class="btn ghost small" onclick="editMeasurement('${m.id}')">Modifier</button>
+        <button class="btn danger-ghost small" onclick="deleteMeasurement('${m.id}')">Suppr.</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ============================================================
@@ -1665,6 +1882,11 @@ const DIAG_SHRUG = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" s
 const DIAG_LEGPRESS = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="2.5"/><line x1="10" y1="16.5" x2="10" y2="22"/><line x1="10" y1="22" x2="20" y2="22"/><line x1="20" y1="22" x2="28" y2="16"/><line x1="28" y1="10" x2="28" y2="22"/></svg>`;
 const DIAG_LUNGE = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="8" r="2.5"/><line x1="14" y1="10" x2="16" y2="20"/><line x1="16" y1="20" x2="10" y2="28"/><line x1="16" y1="20" x2="26" y2="24"/><line x1="26" y1="24" x2="26" y2="30"/></svg>`;
 const DIAG_CALF = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="8" r="2.5"/><line x1="20" y1="10" x2="20" y2="24"/><line x1="20" y1="24" x2="17" y2="30"/><line x1="20" y1="24" x2="23" y2="30"/><line x1="16" y1="30" x2="24" y2="30"/><path d="M14 6l2 2M14 6l0 3"/></svg>`;
+const DIAG_DEADLIFT = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="8" r="2.5"/><line x1="14" y1="10" x2="18" y2="22"/><line x1="18" y1="22" x2="14" y2="30"/><line x1="14" y1="10" x2="10" y2="24"/><line x1="6" y1="26" x2="22" y2="26"/><circle cx="6" cy="26" r="2"/><circle cx="22" cy="26" r="2"/></svg>`;
+const DIAG_PUSHUP = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="20" r="2.5"/><line x1="10" y1="20" x2="30" y2="16"/><line x1="14" y1="21" x2="14" y2="28"/><line x1="26" y1="17" x2="26" y2="28"/></svg>`;
+const DIAG_LEGCURL = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="14" r="2.5"/><line x1="8" y1="16.5" x2="20" y2="18"/><line x1="20" y1="18" x2="26" y2="12"/><line x1="20" y1="18" x2="30" y2="22"/></svg>`;
+const DIAG_LEGEXT = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="12" r="2.5"/><line x1="10" y1="14.5" x2="10" y2="24"/><line x1="10" y1="24" x2="20" y2="24"/><line x1="20" y1="24" x2="30" y2="18"/></svg>`;
+const DIAG_HIPTHRUST = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="24" r="2.5"/><line x1="8" y1="26" x2="18" y2="26"/><line x1="18" y1="26" x2="24" y2="16"/><line x1="18" y1="26" x2="24" y2="30"/></svg>`;
 
 const EXERCISE_LIBRARY = [
   {name:'Tractions (ou tirage vertical)', muscle:'Dos', diagram:ICON_BICEPS_DOS, tip:"Suspends-toi à la barre, mains en pronation un peu plus larges que les épaules. Tire le corps vers le haut jusqu'à ce que le menton dépasse la barre, redescends en contrôlant."},
@@ -1682,7 +1904,28 @@ const EXERCISE_LIBRARY = [
   {name:'Squat', muscle:'Jambes', diagram:ICON_LEGS, tip:"Pieds largeur d'épaules, descends en poussant les hanches vers l'arrière, genoux dans l'axe des pieds, jusqu'à ce que les cuisses soient parallèles au sol."},
   {name:'Presse à cuisses', muscle:'Jambes', diagram:DIAG_LEGPRESS, tip:"Pieds à plat sur le plateau, descends jusqu'à un angle de 90° aux genoux puis pousse sans verrouiller complètement les jambes."},
   {name:'Fentes (par jambe)', muscle:'Jambes', diagram:DIAG_LUNGE, tip:"Grand pas en avant, descends jusqu'à ce que les deux genoux forment un angle de 90°, reviens en poussant sur la jambe avant."},
-  {name:'Mollets debout', muscle:'Jambes', diagram:DIAG_CALF, tip:"Monte sur la pointe des pieds le plus haut possible, marque une pause en haut puis redescends lentement pour bien étirer le mollet."}
+  {name:'Mollets debout', muscle:'Jambes', diagram:DIAG_CALF, tip:"Monte sur la pointe des pieds le plus haut possible, marque une pause en haut puis redescends lentement pour bien étirer le mollet."},
+
+  {name:'Soulevé de terre', muscle:'Dos', diagram:DIAG_DEADLIFT, tip:"Barre proche des tibias, dos droit, pousse sur les jambes et les hanches pour soulever la barre en la gardant collée au corps."},
+  {name:'Tirage vertical prise large', muscle:'Dos', diagram:ICON_BICEPS_DOS, tip:"Prise large en pronation, tire la barre vers le haut de la poitrine en resserrant les omoplates."},
+
+  {name:'Curl haltères alterné', muscle:'Biceps', diagram:DIAG_CURL, tip:"Un bras à la fois, coudes fixes, remonte l'haltère en supination (paume vers toi) en alternant les côtés."},
+  {name:'Curl marteau', muscle:'Biceps', diagram:DIAG_CURL, tip:"Coudes fixes, remonte les haltères en prise neutre (paumes face à face) — cible aussi l'avant-bras."},
+  {name:'Curl pupitre (Scott)', muscle:'Biceps', diagram:DIAG_CURL, tip:"Bras posés sur le pupitre incliné, remonte la barre sans décoller les coudes du support pour bien isoler le biceps."},
+
+  {name:'Écarté couché haltères', muscle:'Pecs', diagram:ICON_BENCH, tip:"Allongé, bras légèrement fléchis, écarte les haltères sur les côtés puis ramène-les au-dessus de la poitrine comme pour une accolade."},
+  {name:'Pompes', muscle:'Pecs', diagram:DIAG_PUSHUP, tip:"Corps gainé et aligné, descends la poitrine près du sol en gardant les coudes à 45° du corps, puis pousse pour remonter."},
+
+  {name:'Extension triceps poulie', muscle:'Triceps', diagram:DIAG_TRICEP, tip:"Coudes fixes le long du corps, pousse la barre ou la corde vers le bas jusqu'à extension complète des bras."},
+  {name:'Kickback triceps', muscle:'Triceps', diagram:DIAG_TRICEP, tip:"Buste penché en avant, bras à l'horizontale, tends l'avant-bras vers l'arrière en gardant le coude fixe."},
+
+  {name:'Développé Arnold', muscle:'Épaules', diagram:ICON_SHOULDERS, tip:"Haltères devant les épaules paumes vers toi, pousse vers le haut en effectuant une rotation pour finir paumes vers l'avant."},
+  {name:'Face pull', muscle:'Épaules', diagram:DIAG_RAISE, tip:"Corde à hauteur de visage, tire vers le visage en écartant les mains, coudes hauts — cible l'arrière des épaules."},
+
+  {name:'Soulevé de terre jambes tendues', muscle:'Jambes', diagram:DIAG_DEADLIFT, tip:"Jambes presque tendues, descends la barre le long des jambes en poussant les hanches vers l'arrière, dos droit, jusqu'à sentir l'étirement des ischios."},
+  {name:'Hip thrust', muscle:'Jambes', diagram:DIAG_HIPTHRUST, tip:"Haut du dos appuyé sur un banc, barre sur les hanches, pousse les hanches vers le haut jusqu'à extension complète."},
+  {name:'Leg curl (ischios)', muscle:'Jambes', diagram:DIAG_LEGCURL, tip:"Allongé ou assis sur la machine, plie les genoux pour ramener les talons vers les fesses en contractant les ischios."},
+  {name:'Leg extension (quadriceps)', muscle:'Jambes', diagram:DIAG_LEGEXT, tip:"Assis sur la machine, tends les jambes vers l'avant en contractant les quadriceps, redescends sans à-coup."}
 ];
 
 function renderExerciseGuide(){
@@ -1719,6 +1962,7 @@ function renderPrograms(){
         </div>
         <div class="program-actions">
           <button class="btn teal small" onclick="startProgramSession('${p.id}')">▶ Démarrer une séance</button>
+          ${state.sessions.some(s=>s.programId===p.id)?`<button class="btn ghost small" onclick="repeatLastSession('${p.id}')">↻ Répéter la dernière</button>`:''}
           <button class="btn ghost small" onclick="editProgram('${p.id}')">Modifier</button>
           <button class="btn danger-ghost small" onclick="deleteProgram('${p.id}')">Suppr.</button>
         </div>
@@ -1744,6 +1988,21 @@ function startProgramSession(programId){
   loadProgramIntoSession();
   if(!document.getElementById('sessDate').value) document.getElementById('sessDate').value = todayStr();
   document.getElementById('sessDate').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function repeatLastSession(programId){
+  const prevSessions = state.sessions.filter(s=>s.programId===programId).sort((a,b)=>b.date.localeCompare(a.date));
+  if(prevSessions.length===0){ toast('Aucune séance précédente pour ce programme'); return; }
+  const last = prevSessions[0];
+  switchSub('entrainement','journal');
+  document.getElementById('sessType').value = 'muscu';
+  toggleSessType();
+  document.getElementById('sessProgramSelect').value = programId;
+  document.getElementById('sessExerciseRows').innerHTML = '';
+  last.exercises.forEach(ex=> addSessExerciseBlock(ex.name, ex.sets));
+  document.getElementById('sessDate').value = todayStr();
+  document.getElementById('sessDate').scrollIntoView({behavior:'smooth', block:'center'});
+  toast(`Séance du ${fmtDate(last.date)} rechargée — ajuste si besoin`);
 }
 
 /* ============================================================
@@ -1941,6 +2200,8 @@ function submitSession(){
     payload = {date, type:'muscu', programId:progId||null, programName:prog?prog.name:'Séance libre', exercises, notes};
   }
 
+  const prevPRs = exercisePRs(editingSessionId);
+
   if(editingSessionId){
     const s = state.sessions.find(s=>s.id===editingSessionId);
     Object.assign(s, payload);
@@ -1957,8 +2218,18 @@ function submitSession(){
   document.getElementById('sessProgramSelect').value = '';
   document.getElementById('cardioActivity').value = '';
   document.getElementById('cardioDuration').value = '';
+
+  const newPRs = [];
+  if(payload.type==='muscu'){
+    payload.exercises.forEach(ex=>{
+      const maxW = Math.max(0, ...(ex.sets||[]).map(st=>parseFloat(st.weight)||0));
+      const prev = prevPRs[ex.name];
+      if(maxW>0 && (!prev || maxW>prev.weight)) newPRs.push({name:ex.name, weight:maxW});
+    });
+  }
+
   save(); renderAll();
-  toast('Séance enregistrée');
+  toast(newPRs.length>0 ? `🏆 Nouveau record : ${newPRs.map(p=>`${p.name} ${p.weight}kg`).join(', ')} !` : 'Séance enregistrée');
 }
 
 function editSession(id){
@@ -2006,12 +2277,137 @@ function sessionVolume(s){
   return (s.exercises||[]).reduce((sum,ex)=> sum + (ex.sets||[]).reduce((ss,st)=> ss + (parseFloat(st.reps)||0)*(parseFloat(st.weight)||0), 0), 0);
 }
 
+function exercisePRs(excludeSessionId){
+  const prs = {};
+  state.sessions.forEach(s=>{
+    if(s.id===excludeSessionId || s.type==='cardio') return;
+    (s.exercises||[]).forEach(ex=>{
+      (ex.sets||[]).forEach(st=>{
+        const w = parseFloat(st.weight)||0;
+        if(w<=0) return;
+        if(!prs[ex.name] || w > prs[ex.name].weight){
+          prs[ex.name] = {weight:w, date:s.date, reps:st.reps};
+        }
+      });
+    });
+  });
+  return prs;
+}
+
+/* ============================================================
+   PROGRESSION DE FORCE
+   ============================================================ */
+let progressionChartInstance = null;
+
+function getLoggedExerciseNames(){
+  const names = new Set();
+  state.sessions.forEach(s=>{
+    if(s.type==='cardio') return;
+    (s.exercises||[]).forEach(ex=>{ if(ex.name) names.add(ex.name); });
+  });
+  return [...names].sort();
+}
+
+function renderProgressionExerciseSelect(){
+  const sel = document.getElementById('progressionExerciseSelect');
+  if(!sel) return;
+  const names = getLoggedExerciseNames();
+  const current = sel.value;
+  sel.innerHTML = names.length
+    ? names.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('')
+    : '<option value="">Aucun exercice enregistré</option>';
+  if(names.includes(current)) sel.value = current;
+  renderProgressionChart();
+}
+
+function renderProgressionChart(){
+  const sel = document.getElementById('progressionExerciseSelect');
+  if(!sel) return;
+  const name = sel.value;
+  const ctx = document.getElementById('progressionChart');
+  const emptyEl = document.getElementById('progressionEmpty');
+  const prCardEl = document.getElementById('progressionPRCard');
+  if(progressionChartInstance){ progressionChartInstance.destroy(); progressionChartInstance = null; }
+
+  if(!name){
+    ctx.style.display = 'none';
+    emptyEl.classList.remove('hidden');
+    prCardEl.innerHTML = '';
+    return;
+  }
+
+  const points = [];
+  [...state.sessions].sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
+    if(s.type==='cardio') return;
+    const ex = (s.exercises||[]).find(e=>e.name===name);
+    if(!ex) return;
+    const maxW = Math.max(0, ...(ex.sets||[]).map(st=>parseFloat(st.weight)||0));
+    if(maxW>0) points.push({date:s.date, weight:maxW});
+  });
+
+  if(points.length===0){
+    ctx.style.display = 'none';
+    emptyEl.classList.remove('hidden');
+    prCardEl.innerHTML = '';
+    return;
+  }
+
+  ctx.style.display = '';
+  emptyEl.classList.add('hidden');
+
+  const accentHex = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#FF7A45';
+  const isLight = currentTheme()==='light';
+  const tickColor = isLight ? '#6E6B78' : '#9C99A8';
+  const gridColor = isLight ? '#E5E0D3' : '#3a3942';
+
+  progressionChartInstance = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: points.map(p=>fmtDate(p.date)),
+      datasets:[{
+        label:`${name} — charge max (kg)`,
+        data: points.map(p=>p.weight),
+        borderColor: accentHex,
+        backgroundColor: 'transparent',
+        fill:false,
+        tension:.3,
+        pointBackgroundColor: accentHex,
+        pointRadius:3
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:tickColor, maxTicksLimit:8}, grid:{color:gridColor}},
+        y:{ticks:{color:tickColor}, grid:{color:gridColor}}
+      }
+    }
+  });
+
+  const prs = exercisePRs();
+  const pr = prs[name];
+  prCardEl.innerHTML = pr ? `
+    <div class="stat-card card">
+      <div class="stat-label">🏆 Record actuel</div>
+      <div class="stat-value">${pr.weight}<span class="unit">kg</span></div>
+      <div class="stat-delta" style="color:var(--text-dim);">${pr.reps||'—'} reps · ${fmtDate(pr.date)}</div>
+    </div>
+  ` : '';
+}
+
 function renderSessions(){
   if(!document.getElementById('sessDate').value) document.getElementById('sessDate').value = todayStr();
   const wrap = document.getElementById('sessionList');
   const sorted = [...state.sessions].sort((a,b)=> b.date.localeCompare(a.date));
   if(sorted.length===0){ wrap.innerHTML = '<div class="empty">Aucune séance enregistrée.</div>'; return; }
-  wrap.innerHTML = sorted.map(s=>{
+  const search = (document.getElementById('sessionSearch')?.value || '').toLowerCase().trim();
+  const sortedFiltered = search ? sorted.filter(s=>
+    (s.programName||'').toLowerCase().includes(search) ||
+    (s.exercises||[]).some(ex=>(ex.name||'').toLowerCase().includes(search))
+  ) : sorted;
+  if(sortedFiltered.length===0){ wrap.innerHTML = '<div class="empty">Aucun résultat pour cette recherche.</div>'; return; }
+  wrap.innerHTML = sortedFiltered.map(s=>{
     const volume = sessionVolume(s);
     return `
     <div class="session-card">
@@ -2300,7 +2696,10 @@ function renderDiete(){
   const sorted = [...state.dietLog].sort((a,b)=> b.date.localeCompare(a.date));
   const wrap = document.getElementById('mealListAll');
   if(sorted.length===0){ wrap.innerHTML='<div class="empty">Aucun repas enregistré.</div>'; return; }
-  wrap.innerHTML = sorted.map(m=>`
+  const mealSearch = (document.getElementById('mealSearch')?.value || '').toLowerCase().trim();
+  const sortedMeals = mealSearch ? sorted.filter(m=> (m.desc||'').toLowerCase().includes(mealSearch) || (m.meal||'').toLowerCase().includes(mealSearch)) : sorted;
+  if(sortedMeals.length===0){ wrap.innerHTML='<div class="empty">Aucun résultat pour cette recherche.</div>'; return; }
+  wrap.innerHTML = sortedMeals.map(m=>`
     <div class="row-item">
       <div class="ri-main">
         <div class="ri-title">${m.desc||m.meal} <span class="pill teal">${m.meal}</span></div>
@@ -3066,7 +3465,7 @@ function renderDashSleepSummary(){
     <div class="dash-mini-stat"><span>Dernière nuit</span><strong>${sorted.length?sorted[0].hours+' h':'—'}</strong></div>
     <div class="dash-mini-stat"><span>Moyenne 7 nuits</span><strong>${avg7!=null?avg7.toFixed(1)+' h':'—'}</strong></div>
     ${sorted.length===0?'<div class="empty" style="margin-top:8px;padding:10px 0;font-size:12px;">Aucune donnée</div>':''}
-    <button class="btn ghost small" style="margin-top:10px;width:100%;" onclick="goPage('pesees');switchSub('pesees','sleep');">Voir le sommeil</button>
+    <button class="btn ghost small" style="margin-top:10px;width:100%;" onclick="goPage('sommeil')">Voir le sommeil</button>
   `;
 }
 
@@ -3097,9 +3496,12 @@ function renderAll(){
   renderPesees();
   renderProgressPhotos();
   renderSleep();
+  renderMeasurements();
   renderPrograms();
+  renderProgramTemplates();
   renderSessions();
   renderTrainingStats();
+  renderProgressionExerciseSelect();
   renderExerciseGuide();
   renderDiete();
   renderPlanning();
