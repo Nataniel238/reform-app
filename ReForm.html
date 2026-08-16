@@ -217,6 +217,16 @@ textarea{resize:vertical;min-height:44px;}
 
 .divider{height:1px;background:var(--border);margin:18px 0;}
 
+.calc-info{margin-top:14px;border:1px solid var(--border);border-radius:8px;padding:10px 14px;background:var(--panel-2);}
+.calc-info summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--text-dim);list-style:none;}
+.calc-info summary::-webkit-details-marker{display:none;}
+.calc-info summary::after{content:'▾';float:right;color:var(--text-dim-2);}
+.calc-info[open] summary::after{content:'▴';}
+.calc-info-body{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
+.calc-info-body p{margin:0 0 8px;font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+.calc-info-body p:last-child{margin-bottom:0;}
+.calc-info-body strong{color:var(--text);}
+
 /* exercise/set builder rows */
 .builder-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;padding:10px;background:var(--panel-3);border-radius:8px;flex-wrap:wrap;}
 .builder-row .field{min-width:90px;}
@@ -288,6 +298,8 @@ canvas{max-height:280px;}
   .grid.cols-4{grid-template-columns:repeat(2,1fr);}
   .grid.cols-3{grid-template-columns:repeat(2,1fr);}
   canvas{max-height:220px;}
+  .form-row{flex-direction:column;align-items:stretch;}
+  .form-row .field{min-width:0;width:100%;}
 }
 
 /* ---------- meal suggestions ---------- */
@@ -732,6 +744,14 @@ canvas{max-height:280px;}
           <button class="btn secondary small" onclick="calcCalories()">Calculer</button>
         </div>
         <div id="calcResult"></div>
+        <details class="calc-info">
+          <summary>ℹ️ Que signifient les macros suggérées ?</summary>
+          <div class="calc-info-body">
+            <p><strong>P — Protéines :</strong> calculées à 2 g par kg de poids corporel, pour préserver ta masse musculaire pendant la perte de poids.</p>
+            <p><strong>G — Glucides :</strong> le reste des calories une fois protéines et lipides retirés — ton énergie principale au quotidien.</p>
+            <p><strong>L — Lipides :</strong> fixés à 25% de tes calories totales, nécessaires à l'équilibre hormonal.</p>
+          </div>
+        </details>
       </div>
 
       <div class="card" style="margin-bottom:18px;">
